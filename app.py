@@ -22,6 +22,91 @@ bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
 router = Router()  # Create a router for handling commands and messages
 
+periodic_messages = [
+    "It's going to be a tremendous day, folks. Stay focused!",
+    "Winners don't just work hard—they work smart. Believe me.",
+    "The future is in your hands, and it's going to be great. Trust me.",
+    "Success is about making deals, and the best deal is with yourself—be the best version of you!",
+    "The best is yet to come. Stay positive, folks.",
+    "Great things are achieved when we believe in ourselves. You’ve got this!",
+    "Big opportunities are right around the corner. Don’t miss them.",
+    "Hard work and determination—an unbeatable combination. Believe me.",
+    "Winning isn’t everything, but wanting to win is. Let’s aim high!",
+    "When you’re confident, you’re already halfway there. Show the world your best!",
+    "Every challenge is a chance to grow. Embrace it.",
+    "Take action today—no excuses. Winners act, losers complain.",
+    "You don’t build success overnight; you build it step by step.",
+    "Nothing worth having comes easy. Keep working hard!",
+    "Great leaders inspire action. Be the leader of your own life.",
+    "Dream big, but don’t forget to plan and execute.",
+    "Opportunities don’t wait. Grab them now!",
+    "Confidence is key, but preparation unlocks the door.",
+    "Every setback is a setup for a comeback. Never give up.",
+    "When the going gets tough, the tough get going. Stay strong!",
+    "Believe in your vision and never let anyone tell you otherwise.",
+    "Discipline is the bridge between goals and achievements. Build it!",
+    "Your mindset determines your success. Think big, act bold.",
+    "Today’s small wins lead to tomorrow’s big successes.",
+    "Surround yourself with positivity—it makes all the difference.",
+    "The sky’s the limit when you work hard and stay focused.",
+    "Take risks, but take smart ones. Fortune favors the bold.",
+    "Success is a journey, not a destination. Enjoy the ride!",
+    "Start where you are. Use what you have. Do what you can.",
+    "Big results require big ambitions. Let’s aim high!",
+    "Focus on solutions, not problems. That’s how winners think.",
+    "Consistency beats intensity. Stay steady, stay strong.",
+    "Success doesn’t wait for the lazy. Hustle every day.",
+    "The people who succeed are those who outwork everyone else.",
+    "Every day is a fresh start. Make it count.",
+    "Persistence beats resistance. Keep pushing forward.",
+    "Your network is your net worth. Build strong connections.",
+    "Small steps every day lead to giant leaps over time.",
+    "Believe in your ideas and work tirelessly to make them real.",
+    "You were made for greatness—never settle for less.",
+    "Greatness doesn’t come from comfort zones. Push your limits!",
+    "The biggest risk is not taking any risks at all. Step up!",
+    "Success favors those who show up every day. Be consistent.",
+    "You can’t build a reputation on what you’re going to do. Take action now!",
+    "Winners see opportunities in every challenge. Find yours.",
+    "A goal without a plan is just a wish. Start planning today.",
+    "Don't let fear stop you. Let it fuel your growth instead.",
+    "Strong foundations lead to skyscraper successes. Build wisely.",
+    "Change the game by bringing your A-game every day.",
+    "Good things come to those who hustle and grind. Keep at it!",
+    "Every decision shapes your destiny. Choose wisely.",
+    "Stay hungry for success, but never forget to stay humble.",
+    "Courage isn’t the absence of fear; it’s acting despite it.",
+    "You’re closer to success than you think. Keep going!",
+    "Don’t follow the crowd. Lead it with bold ideas.",
+    "Think big, act bigger. That’s the secret to success.",
+    "Your potential is limitless. Unlock it every single day.",
+    "Challenges are proof that you’re leveling up. Face them head-on.",
+    "Energy flows where focus goes. Stay laser-focused!",
+    "Your vision is your greatest asset. Protect and pursue it.",
+    "The world rewards doers, not dreamers. Be a doer.",
+    "Don’t wait for the perfect moment. Create it.",
+    "Every day is a new chance to be better than yesterday.",
+    "Keep climbing. The view from the top is worth it.",
+    "Never underestimate the power of a positive mindset.",
+    "Setbacks are just setups for comebacks. Bounce back stronger!",
+    "Big results come from taking bold actions.",
+    "Winners are just losers who kept trying. Never give up.",
+    "In the middle of every difficulty lies opportunity. Seek it.",
+    "Success is built on the foundation of discipline and effort.",
+    "The harder the struggle, the sweeter the victory.",
+    "Be the kind of person others want to follow.",
+    "Visionaries don’t wait for opportunities; they create them.",
+    "The only limit is the one you set in your mind.",
+    "Every moment is an opportunity to rewrite your story.",
+    "You don’t need luck—you need strategy and hard work.",
+    "Focus on progress, not perfection. Small steps matter.",
+    "Your actions today define your success tomorrow.",
+    "Success isn’t about luck—it’s about preparation and perseverance."
+]
+
+# Variable to store group chat ID
+group_chat_id = None
+
 # Categories: Facts, Quotes, Billionaires
 facts = [
     "Donald Trump was the 45th president of the United States, serving from 2017 to 2021.",
@@ -208,10 +293,33 @@ async def on_user_joined(member_update: ChatMemberUpdated):
         )
         await bot.send_message(member_update.chat.id, welcome_message)
 
+@router.my_chat_member()
+async def track_bot_addition(update: types.ChatMemberUpdated):
+    """Track when the bot is added to a group."""
+    global group_chat_id
+    if update.new_chat_member.status in ["member", "administrator"]:
+        group_chat_id = update.chat.id
+        logging.info(f"Bot added to group: {group_chat_id}")
+        await bot.send_message(
+            group_chat_id,
+            "Hello, folks! I'm here to bring tremendous opportunities. Use /trump <your text> or /trumphelp to start. It's going to be great!"
+        )
+
+async def send_periodic_messages():
+    """Send periodic messages to the group."""
+    while True:
+        if group_chat_id:
+            message = random.choice(periodic_messages)
+            await bot.send_message(group_chat_id, message)
+        await asyncio.sleep(2600)  # Send a message every hour
+
 
 async def main():
     # Register the router with the dispatcher
     dp.include_router(router)
+
+    # Start the periodic messages task
+    asyncio.create_task(send_periodic_messages())
 
     # Start polling
     await bot.delete_webhook(drop_pending_updates=True)
